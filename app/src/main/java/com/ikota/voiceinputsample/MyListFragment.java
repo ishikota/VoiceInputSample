@@ -25,7 +25,7 @@ public class MyListFragment extends Fragment{
     private static final ArrayList<String> UP_WORDS = new ArrayList<String>() {
         {add("up");}
         {add("above");}
-        {add("before");}
+        {add("back");}
     };
 
     private static final ArrayList<String> DOWN_WORDS = new ArrayList<String>() {
@@ -142,8 +142,7 @@ public class MyListFragment extends Fragment{
                 int color = selected ? Color.parseColor("#EEEEEE") : Color.TRANSPARENT;
                 target.findViewById(R.id.parent).setBackgroundColor(color);
             }
-        }, 0);
-
+        }, selected ? 100 : 0);  // adjustment to work correctly
     }
 
     /**
