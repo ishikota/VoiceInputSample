@@ -49,7 +49,7 @@ public class MyListFragment extends Fragment{
     private RecyclerView mRecyclerView;
     private ArrayList<Item> mItemList;
 
-    private int mCurrentPos;
+    private int mCurrentPos = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -89,6 +89,8 @@ public class MyListFragment extends Fragment{
         for(int i=0;i<20;i++) {
             mItemList.add(new Item("Item at position "+i));
         }
+        mCurrentPos = 0;
+        mItemList.get(mCurrentPos).selected = true;
 
         mRecyclerView.setAdapter(new MyListAdapter(mAppContext, mItemList));
 
@@ -102,30 +104,30 @@ public class MyListFragment extends Fragment{
         for(String q : res) {
             q = q.toLowerCase();
             if (UP_WORDS.contains(q)) {
-                changeViewState(false, mCurrentPos--);
+                if(mCurrentPos==0) return;
+                unselectView(mCurrentPos);
                 mRecyclerView.scrollBy(0, -row_height);
-                changeViewState(true, mCurrentPos);
+                delaySelectView(mCurrentPos-1);
             } else if (DOWN_WORDS.contains(q)) {
-                changeViewState(false, mCurrentPos++);
+                if(mCurrentPos==mItemList.size()-1) return;
+                unselectView(mCurrentPos);
                 mRecyclerView.scrollBy(0, row_height);
-                changeViewState(true, mCurrentPos);
+                delaySelectView(mCurrentPos+1);
             } else if(TOP_WORDS.contains(q)) {
-                changeViewState(false, mCurrentPos);
-                mCurrentPos = 0;
-                mRecyclerView.scrollToPosition(mCurrentPos);
-                changeViewState(true, mCurrentPos);
+                unselectView(mCurrentPos);
+                mRecyclerView.scrollToPosition(0);
+                delaySelectView(0);
             } else if(BOTTOM_WORDS.contains(q)) {
-                changeViewState(false, mCurrentPos);
-                mCurrentPos = mItemList.size()-1;
+                unselectView(mCurrentPos);
                 mRecyclerView.scrollToPosition(mItemList.size() - 1);
-                changeViewState(true, mCurrentPos);
+                delaySelectView(mItemList.size() - 1);
+
             } else {
                 try {
                     int position = Integer.valueOf(q);
-                    changeViewState(false, mCurrentPos);
-                    mCurrentPos = position;
+                    unselectView(mCurrentPos);
                     mRecyclerView.scrollToPosition(position);
-                    changeViewState(true, mCurrentPos);
+                    delaySelectView(position);
                 } catch (NumberFormatException e) {
                     Log.d("Receive Command", e.toString());
                 }
@@ -133,16 +135,43 @@ public class MyListFragment extends Fragment{
         }
     }
 
-    private void changeViewState(final boolean selected, final int position) {
+    private void selectView(int position) {
+        if(position < 0 || mItemList.size() <= position) {
+            Log.i("selectView", "OutOfBounds:"+position);
+            return;
+        }
+        mCurrentPos = position;
+        mItemList.get(mCurrentPos).selected = true;
+        View target = getChildAtPosition(position);
+        if(target != null) {
+            target.findViewById(R.id.parent).setBackgroundColor(Color.parseColor("#EEEEEE"));
+        } else {
+            Log.e("delaySelectView", "nullpo on position "+position);
+            Toast.makeText(getActivity(), "Sorry, Error Occurred.", Toast.LENGTH_SHORT).show();
+            throw new IllegalStateException("delaySelectView : nullpo on position "+position);
+        }
+    }
+
+    private void delaySelectView(final int position) {
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                View target = getChildAtPosition(position);
-                int color = selected ? Color.parseColor("#EEEEEE") : Color.TRANSPARENT;
-                target.findViewById(R.id.parent).setBackgroundColor(color);
+                selectView(position);
             }
-        }, selected ? 100 : 0);  // adjustment to work correctly
+        }, 500);
+    }
+
+    private void unselectView(int position) {
+        if(position < 0 || mItemList.size() <= position) {
+            Log.i("selectView", "OutOfBounds:"+position);
+            return;
+        }
+        mItemList.get(position).selected = false;
+        View target = getChildAtPosition(position);
+        if(target != null) {
+            target.findViewById(R.id.parent).setBackgroundColor(Color.TRANSPARENT);
+        }
     }
 
     /**
@@ -162,16 +191,7 @@ public class MyListFragment extends Fragment{
             return mRecyclerView.getChildAt(list_pos);
         } else {
             Log.i("getChildAtPosition", "Not displayed so scroll");
-            // target view is not displayed. So scroll list until target is displayed
-            mRecyclerView.scrollToPosition(adapter_pos);
-            boolean swipe_up = mCurrentPos < adapter_pos;
-            if(swipe_up) {
-                // now target view is in bottom of the list
-                return mRecyclerView.getChildAt(mRecyclerView.getChildCount()-1);
-            } else {
-                // now target view is in top of the list
-                return mRecyclerView.getChildAt(0);
-            }
+            return null;
         }
     }
 
@@ -192,9 +212,9 @@ public class MyListFragment extends Fragment{
 
     @Subscribe
     public void onItemClicked(ClickEvent ev) {
-        changeViewState(false, mCurrentPos);
+        unselectView(mCurrentPos);
         mCurrentPos = ev.position;
-        changeViewState(true, mCurrentPos);
+        selectView(mCurrentPos);
         Toast.makeText(getActivity(),
                 String.format("Item at %d is clidked !!", ev.position),
                 Toast.LENGTH_SHORT).show();

@@ -1,6 +1,7 @@
 package com.ikota.voiceinputsample;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,16 +32,16 @@ public class MyListAdapter extends RecyclerView.Adapter<MyListAdapter.ViewHolder
 
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
+        holder.num.setText(String.valueOf(position));
+        holder.text.setText(mDataSet.get(position).content);
+        int color = mDataSet.get(position).selected ? Color.parseColor("#EEEEEE") : Color.TRANSPARENT;
+        holder.parent.setBackgroundColor(color);
         holder.parent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 BaseActivity.sBus.post(new MyListFragment.ClickEvent(position));
             }
         });
-        holder.num.setText(String.valueOf(position));
-        holder.text.setText(mDataSet.get(position).content);
-        //String url = "";
-        //Picasso.with(mContext).load(url).into(holder.imageview);
     }
 
     @Override
