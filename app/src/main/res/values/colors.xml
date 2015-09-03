@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="white_dull">#FAFAFA</color>
+    <color name="black">#0D0F14</color>
+    <color name="pink_A200">#FF4081</color>
+
+    <color name="base">@color/white_dull</color>
+    <color name="accent">@color/pink_A200</color>
+    <color name="primary">@color/black</color>
+    <color name="primary_dark">@android:color/black</color>
+    <color name="status_bar">@android:color/black</color>
+    <color name="navigation_bar">@android:color/black</color>
+
+    <color name="text_color_primary">@android:color/white</color>
+
+</resources>

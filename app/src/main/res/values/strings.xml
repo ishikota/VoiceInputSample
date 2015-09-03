@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">VoiceInputSample</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_with_dialog">With Dialog</string>
+    <string name="action_without_dialog">Without Dialog</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="start_listen">Starts listening</string>
+    <string name="finish_listen">Finished listening</string>
+    <string name="listening">Listening…</string>
+    <string name="not_available">Your device does not supported Voice Input.</string>
+</resources>
