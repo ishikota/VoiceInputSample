@@ -19,8 +19,33 @@ import java.util.ArrayList;
 
 public class MyListFragment extends Fragment{
 
+    // Voice Command Keywords
+    private static final ArrayList<String> UP_WORDS = new ArrayList<String>() {
+        {add("up");}
+        {add("above");}
+        {add("before");}
+    };
+
+    private static final ArrayList<String> DOWN_WORDS = new ArrayList<String>() {
+        {add("down");}
+        {add("below");}
+        {add("next");}
+    };
+
+    private static final ArrayList<String> TOP_WORDS = new ArrayList<String>() {
+        {add("top");}
+        {add("first");}
+    };
+
+    private static final ArrayList<String> BOTTOM_WORDS = new ArrayList<String>() {
+        {add("bottom");}
+        {add("last");}
+    };
+
+
     private Context mAppContext;
     private RecyclerView mRecyclerView;
+    private ArrayList<Item> mItemList;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,23 +81,38 @@ public class MyListFragment extends Fragment{
         LinearLayoutManager layoutManager = new LinearLayoutManager(mAppContext);
         mRecyclerView.setLayoutManager(layoutManager);
 
-        ArrayList<Item> items = new ArrayList<>();
+        mItemList = new ArrayList<>();
         for(int i=0;i<20;i++) {
-            items.add(new Item("Item at position "+i));
+            mItemList.add(new Item("Item at position "+i));
         }
-        mRecyclerView.setAdapter(new MyListAdapter(mAppContext, items));
+
+        mRecyclerView.setAdapter(new MyListAdapter(mAppContext, mItemList));
 
         return root;
     }
 
     @Subscribe
     public void onReceivedVoiceCommand(VoiceEvent ev) {
-        try {
-            int position = Integer.valueOf(ev.query);
-            //mRecyclerView.scrollToPosition(position);
-            mRecyclerView.scrollBy(0,100);
-        } catch (NumberFormatException e) {
-            Log.i("VoiceCommand", "Received command : "+ev.query);
+        String[] res = ev.query.split(" ");
+        int row_height = (int)mAppContext.getResources().getDimension(R.dimen.row_height);
+        for(String q : res) {
+            q = q.toLowerCase();
+            if (UP_WORDS.contains(q)) {
+                mRecyclerView.scrollBy(0, -row_height);
+            } else if (DOWN_WORDS.contains(q)) {
+                mRecyclerView.scrollBy(0, row_height);
+            } else if(TOP_WORDS.contains(q)) {
+                mRecyclerView.scrollToPosition(0);
+            } else if(BOTTOM_WORDS.contains(q)) {
+                mRecyclerView.scrollToPosition(mItemList.size()-1);
+            } else {
+                try {
+                    int position = Integer.valueOf(q);
+                    mRecyclerView.scrollToPosition(position);
+                } catch (NumberFormatException e) {
+                    Log.d("Receive Command", e.toString());
+                }
+            }
         }
     }
 
