@@ -1,5 +1,9 @@
 package com.ikota.voiceinputsample;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Build;
@@ -20,6 +24,7 @@ import android.widget.Toast;
 import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class MyListActivity extends BaseActivity {
@@ -32,8 +37,8 @@ public class MyListActivity extends BaseActivity {
 
     private FloatingActionButton mFAB;
 
-    SpeechRecognizer mSpeechRecognizer;
-    TextToSpeech mTTS;
+    private SpeechRecognizer mSpeechRecognizer;
+    private TextToSpeech mTTS;
     public static final int REQUEST_CODE = 0;
 
     private String str(int id) {
@@ -186,8 +191,6 @@ public class MyListActivity extends BaseActivity {
 
     /** start speech recognition without dialog */
     private void startSpeechRecognizer() {
-        mFAB.setClickable(true);
-        changeFABState(true);
 
         if(mTTS.isSpeaking()) {
             startSpeechRecognizerWithDelay(1000);
@@ -195,6 +198,9 @@ public class MyListActivity extends BaseActivity {
             mFAB.setClickable(false);
             return;
         }
+
+        mFAB.setClickable(true);
+        changeFABState(true);
 
         // force old recognizer instance to finish
         if(mSpeechRecognizer!=null) {
@@ -244,7 +250,7 @@ public class MyListActivity extends BaseActivity {
 
 
     /** This listener re-start SpeechRecognizer When TIMEOUT or NO_MATCH occurred. */
-    class MyRecognitionListener implements RecognitionListener {
+    private final class MyRecognitionListener implements RecognitionListener {
 
         @Override
         public void onReadyForSpeech(Bundle params) {
@@ -284,6 +290,8 @@ public class MyListActivity extends BaseActivity {
         @Override
         public void onBeginningOfSpeech() {
             // Called when user starts to speak
+            boundAnim(mFAB);
+            mFAB.setImageResource(R.drawable.ic_sms_white_24dp);
         }
 
         @Override
@@ -294,6 +302,8 @@ public class MyListActivity extends BaseActivity {
         @Override
         public void onEndOfSpeech() {
             // Called when user has finished to speak
+            boundAnim(mFAB);
+            mFAB.setImageResource(R.drawable.ic_mic_white_24dp);
         }
 
         @Override public void onEvent(int eventType, Bundle params) {
@@ -321,6 +331,25 @@ public class MyListActivity extends BaseActivity {
             mFAB.setImageResource(R.drawable.ic_mic_off_white_24dp);
         }
         mFAB.setTag(!is_listening);
+        boundAnim(mFAB);
+    }
+
+    private void boundAnim(View target) {
+        List<Animator> list = new ArrayList<>();
+        list.add(createScaleAnim(target, 1.0f, 0.7f));
+        list.add(createScaleAnim(target, 0.7f, 1.2f));
+        list.add(createScaleAnim(target, 1.2f, 1.0f));
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(list);
+        animatorSet.start();
+    }
+
+    private Animator createScaleAnim(View target, float from, float to) {
+        PropertyValuesHolder pvhsx = PropertyValuesHolder.ofFloat(View.SCALE_X, from, to);
+        PropertyValuesHolder pvhsy = PropertyValuesHolder.ofFloat(View.SCALE_Y, from, to);
+        ObjectAnimator anim = ObjectAnimator.ofPropertyValuesHolder(target, pvhsx, pvhsy);
+        anim.setDuration(40);
+        return anim;
     }
 
 
