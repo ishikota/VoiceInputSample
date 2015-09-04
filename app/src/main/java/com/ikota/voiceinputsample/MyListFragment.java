@@ -100,18 +100,17 @@ public class MyListFragment extends Fragment{
     @Subscribe
     public void onReceivedVoiceCommand(VoiceEvent ev) {
         String[] res = ev.query.split(" ");
-        int row_height = (int)mAppContext.getResources().getDimension(R.dimen.row_height);
         for(String q : res) {
             q = q.toLowerCase();
             if (UP_WORDS.contains(q)) {
                 if(mCurrentPos==0) return;
                 unselectView(mCurrentPos);
-                mRecyclerView.scrollBy(0, -row_height);
+                mRecyclerView.scrollToPosition(mCurrentPos-1);
                 delaySelectView(mCurrentPos-1);
             } else if (DOWN_WORDS.contains(q)) {
                 if(mCurrentPos==mItemList.size()-1) return;
                 unselectView(mCurrentPos);
-                mRecyclerView.scrollBy(0, row_height);
+                mRecyclerView.scrollToPosition(mCurrentPos+1);
                 delaySelectView(mCurrentPos+1);
             } else if(TOP_WORDS.contains(q)) {
                 unselectView(mCurrentPos);
