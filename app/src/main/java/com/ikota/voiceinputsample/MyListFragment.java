@@ -3,8 +3,10 @@ package com.ikota.voiceinputsample;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -12,11 +14,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 
 public class MyListFragment extends Fragment{
@@ -44,11 +48,36 @@ public class MyListFragment extends Fragment{
         {add("last");}
     };
 
+    private static final String[] TEXTS = {
+            "There is always light behind the clouds.",
+            "Change before you have to.",
+            "If you can dream it, you can do it.",
+            "Love the life you live. Live the life you love.",
+            "My life didn’t please me, so I created my life.",
+            "It always seems impossible until it’s done.",
+            "Peace begins with a smile.",
+            "Love dies only when growth stops.",
+            "There is more to life than increasing its speed.",
+            "Everything is practice.",
+            "If you want to be happy, be.",
+            "Without haste, but without rest.",
+            "You’ll never find a rainbow if you’re looking down.",
+            "Indecision is often worse than wrong action.",
+            "He who has never hoped can never despair.",
+            "I will prepare and some day my chance will come.",
+            "Do one thing everyday that scares you.",
+            "He liked to like people, therefore people liked him.",
+            "The only way to have a friend is to be one.",
+            "Move fast and break things. "
+    };
+
+
 
     private Context mAppContext;
     private RecyclerView mRecyclerView;
     private ArrayList<Item> mItemList;
 
+    private TextToSpeech mTTS;
     private int mCurrentPos = 0;
 
     @Override
@@ -70,6 +99,12 @@ public class MyListFragment extends Fragment{
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(mTTS!=null) mTTS.shutdown();
+    }
+
+    @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         mAppContext = activity.getApplicationContext();
@@ -87,49 +122,81 @@ public class MyListFragment extends Fragment{
 
         mItemList = new ArrayList<>();
         for(int i=0;i<20;i++) {
-            mItemList.add(new Item("Item at position "+i));
+            mItemList.add(new Item(TEXTS[i]));
         }
         mCurrentPos = 0;
         mItemList.get(mCurrentPos).selected = true;
 
         mRecyclerView.setAdapter(new MyListAdapter(mAppContext, mItemList));
 
+        mTTS = new TextToSpeech(mAppContext, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (TextToSpeech.SUCCESS == status) {
+                    Locale locale = Locale.ENGLISH;
+                    if (mTTS.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) {
+                        Log.i("TTS", "Success onInit()");
+                        mTTS.setLanguage(locale);
+                    } else {
+                        Log.d("TTS", "Error SetLocale");
+                    }
+                } else {
+                    Log.d("TTS", "Error Init");
+                }
+            }
+        });
+
         return root;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void speechText(String message) {
+        if (0 < message.length()) {
+            if (mTTS.isSpeaking()) {
+                mTTS.stop();
+                Log.i("TTS", "speaking is interrupted.");
+            }
+            Log.i("TTS", "message : "+message);
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null, message);
+            } else {
+                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
     }
 
     @Subscribe
     public void onReceivedVoiceCommand(VoiceEvent ev) {
         String[] res = ev.query.split(" ");
-        for(String q : res) {
-            q = q.toLowerCase();
-            if (UP_WORDS.contains(q)) {
-                if(mCurrentPos==0) return;
-                unselectView(mCurrentPos);
-                mRecyclerView.scrollToPosition(mCurrentPos-1);
-                delaySelectView(mCurrentPos-1);
-            } else if (DOWN_WORDS.contains(q)) {
-                if(mCurrentPos==mItemList.size()-1) return;
-                unselectView(mCurrentPos);
-                mRecyclerView.scrollToPosition(mCurrentPos+1);
-                delaySelectView(mCurrentPos+1);
-            } else if(TOP_WORDS.contains(q)) {
-                unselectView(mCurrentPos);
-                mRecyclerView.scrollToPosition(0);
-                delaySelectView(0);
-            } else if(BOTTOM_WORDS.contains(q)) {
-                unselectView(mCurrentPos);
-                mRecyclerView.scrollToPosition(mItemList.size() - 1);
-                delaySelectView(mItemList.size() - 1);
+        String q = res[0].toLowerCase();
 
-            } else {
-                try {
-                    int position = Integer.valueOf(q);
-                    unselectView(mCurrentPos);
-                    mRecyclerView.scrollToPosition(position);
-                    delaySelectView(position);
-                } catch (NumberFormatException e) {
-                    Log.d("Receive Command", e.toString());
-                }
+        if (UP_WORDS.contains(q)) {
+            if(mCurrentPos==0) return;
+            unselectView(mCurrentPos);
+            mRecyclerView.scrollToPosition(mCurrentPos - 1);
+            delaySelectView(mCurrentPos-1);
+        } else if (DOWN_WORDS.contains(q)) {
+            if(mCurrentPos==mItemList.size()-1) return;
+            unselectView(mCurrentPos);
+            mRecyclerView.scrollToPosition(mCurrentPos + 1);
+            delaySelectView(mCurrentPos+1);
+        } else if(TOP_WORDS.contains(q)) {
+            unselectView(mCurrentPos);
+            mRecyclerView.scrollToPosition(0);
+            delaySelectView(0);
+        } else if(BOTTOM_WORDS.contains(q)) {
+            unselectView(mCurrentPos);
+            mRecyclerView.scrollToPosition(mItemList.size() - 1);
+            delaySelectView(mItemList.size() - 1);
+        } else {
+            try {
+                int position = Integer.valueOf(q);
+                unselectView(mCurrentPos);
+                mRecyclerView.scrollToPosition(position);
+                delaySelectView(position);
+            } catch (NumberFormatException e) {
+                Log.d("Receive Command", e.toString());
             }
         }
     }
@@ -139,11 +206,14 @@ public class MyListFragment extends Fragment{
             Log.i("selectView", "OutOfBounds:"+position);
             return;
         }
+        Log.i("selectView", "selectView is called with position:"+position);
         mCurrentPos = position;
         mItemList.get(mCurrentPos).selected = true;
         View target = getChildAtPosition(position);
         if(target != null) {
             target.findViewById(R.id.parent).setBackgroundColor(Color.parseColor("#EEEEEE"));
+            String message = ((TextView)target.findViewById(R.id.text)).getText().toString();
+            speechText(message);
         } else {
             Log.e("delaySelectView", "nullpo on position "+position);
             Toast.makeText(getActivity(), "Sorry, Error Occurred.", Toast.LENGTH_SHORT).show();
