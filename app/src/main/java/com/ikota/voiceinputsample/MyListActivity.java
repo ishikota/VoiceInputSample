@@ -1,6 +1,7 @@
 package com.ikota.voiceinputsample;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
@@ -13,12 +14,15 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.squareup.otto.Subscribe;
@@ -35,6 +39,7 @@ public class MyListActivity extends BaseActivity {
     private static final String HELLO = "Hello";
     private static final String BYE = "Bye";
 
+    private CoordinatorLayout mCoordinatorLayout;
     private FloatingActionButton mFAB;
 
     private SpeechRecognizer mSpeechRecognizer;
@@ -77,6 +82,7 @@ public class MyListActivity extends BaseActivity {
             }
         });
 
+        mCoordinatorLayout = (CoordinatorLayout)findViewById(R.id.parent);
         mFAB = (FloatingActionButton)findViewById(R.id.fab);
         mFAB.setTag(false);  // if listening now
         mFAB.setOnClickListener(new View.OnClickListener() {
@@ -265,11 +271,10 @@ public class MyListActivity extends BaseActivity {
             String voice_in = candidates.get(0);
             Log.i(TAG, "onResults called wit result : " + voice_in);
             if(voice_in.equals("finish")) {
+                speechText(new SpeechEvent(BYE));
                 killRecognizer();
             } else {
                 BaseActivity.sBus.post(new MyListFragment.VoiceEvent(voice_in));
-                // start next recognition again
-                startSpeechRecognizerWithDelay(1000);
             }
 
         }
@@ -322,6 +327,24 @@ public class MyListActivity extends BaseActivity {
 
     }
 
+
+    @Subscribe
+    public void ifCommandAccepted(CAEvent ev) {
+        if(ev.accepted) {
+            startSpeechRecognizerWithDelay(1000);
+        } else {
+            Snackbar.make(mCoordinatorLayout, "Try Again", Snackbar.LENGTH_SHORT).show();
+            noMatchAnim(mFAB);
+        }
+    }
+
+    public static class CAEvent {
+        public final boolean accepted;
+        public CAEvent(boolean accepted) {
+            this.accepted = accepted;
+        }
+    }
+
     private void changeFABState(boolean to_listening) {
         boolean is_listening = (boolean)mFAB.getTag();  // get FAB current state
         if(is_listening == to_listening) return;  // already FAB is desired state
@@ -336,19 +359,47 @@ public class MyListActivity extends BaseActivity {
 
     private void boundAnim(View target) {
         List<Animator> list = new ArrayList<>();
-        list.add(createScaleAnim(target, 1.0f, 0.7f));
-        list.add(createScaleAnim(target, 0.7f, 1.2f));
-        list.add(createScaleAnim(target, 1.2f, 1.0f));
+        list.add(createScaleAnim(40, target, 1.0f, 0.7f));
+        list.add(createScaleAnim(40, target, 0.7f, 1.2f));
+        list.add(createScaleAnim(40, target, 1.2f, 1.0f));
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playSequentially(list);
         animatorSet.start();
     }
 
-    private Animator createScaleAnim(View target, float from, float to) {
+    private void noMatchAnim(final ImageView target) {
+        List<Animator> list = new ArrayList<>();
+        list.add(createScaleAnim(50, target, 1.0f, 0.7f));
+        list.add(createScaleAnim(50, target, 0.7f, 1.0f));
+        list.add(createScaleAnim(50, target, 1.0f, 0.7f));
+        list.add(createScaleAnim(50, target, 0.7f, 1.0f));
+        list.add(createScaleAnim(50, target, 1.0f, 0.7f));
+        list.add(createScaleAnim(50, target, 0.7f, 1.0f));
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playSequentially(list);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                target.setImageResource(R.drawable.ic_warning_white_24dp);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                target.setImageResource(R.drawable.ic_mic_white_24dp);
+                startSpeechRecognizerWithDelay(100);
+            }
+        });
+        animatorSet.start();
+    }
+
+    private Animator createScaleAnim(int duration, View target, float from, float to) {
         PropertyValuesHolder pvhsx = PropertyValuesHolder.ofFloat(View.SCALE_X, from, to);
         PropertyValuesHolder pvhsy = PropertyValuesHolder.ofFloat(View.SCALE_Y, from, to);
         ObjectAnimator anim = ObjectAnimator.ofPropertyValuesHolder(target, pvhsx, pvhsy);
-        anim.setDuration(40);
+        anim.setDuration(duration);
         return anim;
     }
 

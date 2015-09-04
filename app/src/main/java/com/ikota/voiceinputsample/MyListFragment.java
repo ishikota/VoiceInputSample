@@ -130,20 +130,24 @@ public class MyListFragment extends Fragment{
         String q = res[0].toLowerCase();
 
         if (UP_WORDS.contains(q)) {
+            BaseActivity.sBus.post(new MyListActivity.CAEvent(true));
             if(mCurrentPos==0) return;
             unselectView(mCurrentPos);
             mRecyclerView.scrollToPosition(mCurrentPos - 1);
-            delaySelectView(mCurrentPos-1);
+            delaySelectView(mCurrentPos - 1);
         } else if (DOWN_WORDS.contains(q)) {
+            BaseActivity.sBus.post(new MyListActivity.CAEvent(true));
             if(mCurrentPos==mItemList.size()-1) return;
             unselectView(mCurrentPos);
             mRecyclerView.scrollToPosition(mCurrentPos + 1);
-            delaySelectView(mCurrentPos+1);
+            delaySelectView(mCurrentPos + 1);
         } else if(TOP_WORDS.contains(q)) {
             unselectView(mCurrentPos);
             mRecyclerView.scrollToPosition(0);
             delaySelectView(0);
+            BaseActivity.sBus.post(new MyListActivity.CAEvent(true));
         } else if(BOTTOM_WORDS.contains(q)) {
+            BaseActivity.sBus.post(new MyListActivity.CAEvent(true));
             unselectView(mCurrentPos);
             mRecyclerView.scrollToPosition(mItemList.size() - 1);
             delaySelectView(mItemList.size() - 1);
@@ -153,8 +157,10 @@ public class MyListFragment extends Fragment{
                 unselectView(mCurrentPos);
                 mRecyclerView.scrollToPosition(position);
                 delaySelectView(position);
+                BaseActivity.sBus.post(new MyListActivity.CAEvent(true));
             } catch (NumberFormatException e) {
                 Log.d("Receive Command", e.toString());
+                BaseActivity.sBus.post(new MyListActivity.CAEvent(false));
             }
         }
     }
