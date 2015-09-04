@@ -9,10 +9,12 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.squareup.otto.Subscribe;
@@ -25,8 +27,10 @@ public class MyListActivity extends BaseActivity {
     private static final String TAG = "SR lifecycle";  // SpeechRecognizer lifecycle
 
     // Voice constant
-    private static final String HELLO = "Nice to meet you";
-    private static final String BYE = "Thanks";
+    private static final String HELLO = "Hello";
+    private static final String BYE = "Bye";
+
+    private FloatingActionButton mFAB;
 
     SpeechRecognizer mSpeechRecognizer;
     TextToSpeech mTTS;
@@ -64,6 +68,22 @@ public class MyListActivity extends BaseActivity {
                     }
                 } else {
                     Log.d("TTS", "Error Init");
+                }
+            }
+        });
+
+        mFAB = (FloatingActionButton)findViewById(R.id.fab);
+        mFAB.setTag(false);  // if listening now
+        mFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean is_listening = (boolean)view.getTag();
+                if(!is_listening) {
+                    speechText(new SpeechEvent(HELLO));
+                    startSpeechRecognizer();
+                } else {
+                    speechText(new SpeechEvent(BYE));
+                    killRecognizer();
                 }
             }
         });
@@ -166,9 +186,13 @@ public class MyListActivity extends BaseActivity {
 
     /** start speech recognition without dialog */
     private void startSpeechRecognizer() {
+        mFAB.setClickable(true);
+        changeFABState(true);
 
         if(mTTS.isSpeaking()) {
             startSpeechRecognizerWithDelay(1000);
+            changeFABState(false);
+            mFAB.setClickable(false);
             return;
         }
 
@@ -198,12 +222,11 @@ public class MyListActivity extends BaseActivity {
     }
 
     private void killRecognizer() {
+        changeFABState(false);
         if(mSpeechRecognizer != null) {
             Log.i(TAG, "destroy old recognizer");
             mSpeechRecognizer.destroy();
             mSpeechRecognizer = null;
-            speechText(new SpeechEvent(BYE));
-            Toast.makeText(this, str(R.string.finish_listen), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -287,6 +310,17 @@ public class MyListActivity extends BaseActivity {
             // Log.i(TAG, "onRmsChanged called with rmsdB "+rmsdB);  // called frequently
         }
 
+    }
+
+    private void changeFABState(boolean to_listening) {
+        boolean is_listening = (boolean)mFAB.getTag();  // get FAB current state
+        if(is_listening == to_listening) return;  // already FAB is desired state
+        if(to_listening) {
+            mFAB.setImageResource(R.drawable.ic_mic_white_24dp);
+        } else {
+            mFAB.setImageResource(R.drawable.ic_mic_off_white_24dp);
+        }
+        mFAB.setTag(!is_listening);
     }
 
 
