@@ -3,10 +3,8 @@ package com.ikota.voiceinputsample;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.speech.tts.TextToSpeech;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -20,7 +18,6 @@ import android.widget.Toast;
 import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
-import java.util.Locale;
 
 
 public class MyListFragment extends Fragment{
@@ -48,6 +45,7 @@ public class MyListFragment extends Fragment{
         {add("last");}
     };
 
+    // text displayed in list
     private static final String[] TEXTS = {
             "There is always light behind the clouds.",
             "Change before you have to.",
@@ -77,7 +75,6 @@ public class MyListFragment extends Fragment{
     private RecyclerView mRecyclerView;
     private ArrayList<Item> mItemList;
 
-    private TextToSpeech mTTS;
     private int mCurrentPos = 0;
 
     @Override
@@ -96,12 +93,6 @@ public class MyListFragment extends Fragment{
     public void onPause() {
         super.onPause();
         BaseActivity.sBus.unregister(this);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if(mTTS!=null) mTTS.shutdown();
     }
 
     @Override
@@ -129,42 +120,9 @@ public class MyListFragment extends Fragment{
 
         mRecyclerView.setAdapter(new MyListAdapter(mAppContext, mItemList));
 
-        mTTS = new TextToSpeech(mAppContext, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (TextToSpeech.SUCCESS == status) {
-                    Locale locale = Locale.ENGLISH;
-                    if (mTTS.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) {
-                        Log.i("TTS", "Success onInit()");
-                        mTTS.setLanguage(locale);
-                    } else {
-                        Log.d("TTS", "Error SetLocale");
-                    }
-                } else {
-                    Log.d("TTS", "Error Init");
-                }
-            }
-        });
-
         return root;
     }
 
-    @SuppressWarnings("deprecation")
-    private void speechText(String message) {
-        if (0 < message.length()) {
-            if (mTTS.isSpeaking()) {
-                mTTS.stop();
-                Log.i("TTS", "speaking is interrupted.");
-            }
-            Log.i("TTS", "message : "+message);
-
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null, message);
-            } else {
-                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null);
-            }
-        }
-    }
 
     @Subscribe
     public void onReceivedVoiceCommand(VoiceEvent ev) {
@@ -213,7 +171,7 @@ public class MyListFragment extends Fragment{
         if(target != null) {
             target.findViewById(R.id.parent).setBackgroundColor(Color.parseColor("#EEEEEE"));
             String message = ((TextView)target.findViewById(R.id.text)).getText().toString();
-            speechText(message);
+            BaseActivity.sBus.post(new MyListActivity.SpeechEvent(message));
         } else {
             Log.e("delaySelectView", "nullpo on position "+position);
             Toast.makeText(getActivity(), "Sorry, Error Occurred.", Toast.LENGTH_SHORT).show();

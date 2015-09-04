@@ -2,16 +2,20 @@ package com.ikota.voiceinputsample;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
+
+import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -20,7 +24,12 @@ public class MyListActivity extends BaseActivity {
 
     private static final String TAG = "SR lifecycle";  // SpeechRecognizer lifecycle
 
+    // Voice constant
+    private static final String HELLO = "Nice to meet you";
+    private static final String BYE = "Thanks";
+
     SpeechRecognizer mSpeechRecognizer;
+    TextToSpeech mTTS;
     public static final int REQUEST_CODE = 0;
 
     private String str(int id) {
@@ -40,17 +49,43 @@ public class MyListActivity extends BaseActivity {
             String tag = MyListFragment.class.getSimpleName();
             fm.beginTransaction().add(R.id.container, fragment, tag).commit();
         }
+
+        // setup TTS
+        mTTS = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (TextToSpeech.SUCCESS == status) {
+                    Locale locale = Locale.ENGLISH;
+                    if (mTTS.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) {
+                        Log.i("TTS", "Success onInit()");
+                        mTTS.setLanguage(locale);
+                    } else {
+                        Log.d("TTS", "Error SetLocale");
+                    }
+                } else {
+                    Log.d("TTS", "Error Init");
+                }
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        BaseActivity.sBus.register(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         killRecognizer();
+        BaseActivity.sBus.unregister(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(mTTS!=null) mTTS.shutdown();
     }
 
     @Override
@@ -66,12 +101,39 @@ public class MyListActivity extends BaseActivity {
         if(id == R.id.action_with_dialog) {
             startRecognizerActivity();
         } else if(id == R.id.action_without_dialog) {
+            speechText(new SpeechEvent(HELLO));
             startSpeechRecognizer();
         } else if(id == R.id.action_cancel) {
             killRecognizer();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Subscribe
+    public void speechText(SpeechEvent ev) {
+        String message = ev.message;
+        if (0 < message.length()) {
+            if (mTTS.isSpeaking()) {
+                mTTS.stop();
+                Log.i("TTS", "speaking is interrupted.");
+            }
+            Log.i("TTS", "message : "+message);
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null, message);
+            } else {
+                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
+    }
+
+    public static class SpeechEvent {
+        public final String message;
+        public SpeechEvent(String message) {
+            this.message = message;
+        }
     }
 
 
@@ -92,8 +154,23 @@ public class MyListActivity extends BaseActivity {
         }
     }
 
+    private void startSpeechRecognizerWithDelay(long mills) {
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startSpeechRecognizer();
+            }
+        }, mills);
+    }
+
     /** start speech recognition without dialog */
     private void startSpeechRecognizer() {
+
+        if(mTTS.isSpeaking()) {
+            startSpeechRecognizerWithDelay(1000);
+            return;
+        }
 
         // force old recognizer instance to finish
         if(mSpeechRecognizer!=null) {
@@ -125,6 +202,7 @@ public class MyListActivity extends BaseActivity {
             Log.i(TAG, "destroy old recognizer");
             mSpeechRecognizer.destroy();
             mSpeechRecognizer = null;
+            speechText(new SpeechEvent(BYE));
             Toast.makeText(this, str(R.string.finish_listen), Toast.LENGTH_SHORT).show();
         }
     }
@@ -162,14 +240,7 @@ public class MyListActivity extends BaseActivity {
             } else {
                 BaseActivity.sBus.post(new MyListFragment.VoiceEvent(voice_in));
                 // start next recognition again
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.i("speech", "start recognizer again");
-                        startSpeechRecognizer();
-                    }
-                }, 1000);
+                startSpeechRecognizerWithDelay(1000);
             }
 
         }
