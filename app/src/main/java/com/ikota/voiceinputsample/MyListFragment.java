@@ -111,12 +111,14 @@ public class MyListFragment extends Fragment{
         LinearLayoutManager layoutManager = new LinearLayoutManager(mAppContext);
         mRecyclerView.setLayoutManager(layoutManager);
 
-        mItemList = new ArrayList<>();
-        for (String test : TEXTS) {
-            mItemList.add(new Item(test));
+        if(mItemList == null) {  // else orientation change occurred
+            mItemList = new ArrayList<>();
+            for (String test : TEXTS) {
+                mItemList.add(new Item(test));
+            }
+            mCurrentPos = 0;
+            mItemList.get(mCurrentPos).selected = true;
         }
-        mCurrentPos = 0;
-        mItemList.get(mCurrentPos).selected = true;
 
         mRecyclerView.setAdapter(new MyListAdapter(mAppContext, mItemList));
 
