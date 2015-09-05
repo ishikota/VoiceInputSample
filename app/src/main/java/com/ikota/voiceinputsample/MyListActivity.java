@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,8 +18,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -44,7 +41,6 @@ public class MyListActivity extends BaseActivity {
 
     private SpeechRecognizer mSpeechRecognizer;
     private TextToSpeech mTTS;
-    public static final int REQUEST_CODE = 0;
 
     private String str(int id) {
         return getResources().getString(id);
@@ -88,8 +84,8 @@ public class MyListActivity extends BaseActivity {
         mFAB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                boolean is_listening = (boolean)view.getTag();
-                if(!is_listening) {
+                boolean is_listening = (boolean) view.getTag();
+                if (!is_listening) {
                     speechText(new SpeechEvent(HELLO));
                     startSpeechRecognizer();
                 } else {
@@ -119,81 +115,6 @@ public class MyListActivity extends BaseActivity {
         if(mTTS!=null) mTTS.shutdown();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if(id == R.id.action_with_dialog) {
-            startRecognizerActivity();
-        } else if(id == R.id.action_without_dialog) {
-            speechText(new SpeechEvent(HELLO));
-            startSpeechRecognizer();
-        } else if(id == R.id.action_cancel) {
-            killRecognizer();
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Subscribe
-    public void speechText(SpeechEvent ev) {
-        String message = ev.message;
-        if (0 < message.length()) {
-            if (mTTS.isSpeaking()) {
-                mTTS.stop();
-                Log.i("TTS", "speaking is interrupted.");
-            }
-            Log.i("TTS", "message : "+message);
-
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null, message);
-            } else {
-                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null);
-            }
-        }
-    }
-
-    public static class SpeechEvent {
-        public final String message;
-        public SpeechEvent(String message) {
-            this.message = message;
-        }
-    }
-
-
-    /** Display speech dialog and starts to listening. */
-    private void startRecognizerActivity() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        // set text which is displayed on dialog
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, str(R.string.listening));
-        // set language to recognize
-        intent.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-
-        try {
-            startActivityForResult(intent, REQUEST_CODE);
-        } catch (ActivityNotFoundException e) {
-            // the case when the target device doesn't supported speech recognition
-            Toast.makeText(this, str(R.string.not_available), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void startSpeechRecognizerWithDelay(long mills) {
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                startSpeechRecognizer();
-            }
-        }, mills);
-    }
 
     /** start speech recognition without dialog */
     private void startSpeechRecognizer() {
@@ -233,6 +154,16 @@ public class MyListActivity extends BaseActivity {
         mSpeechRecognizer.startListening(intent);
     }
 
+    private void startSpeechRecognizerWithDelay(long mills) {
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startSpeechRecognizer();
+            }
+        }, mills);
+    }
+
     private void killRecognizer() {
         changeFABState(false);
         if(mSpeechRecognizer != null) {
@@ -240,18 +171,6 @@ public class MyListActivity extends BaseActivity {
             mSpeechRecognizer.destroy();
             mSpeechRecognizer = null;
         }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
-            ArrayList<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            String s = results.get(0);
-            Toast.makeText(this, String.format("You said '%s'", s), Toast.LENGTH_LONG).show();
-            Log.i("MyListActivity", "Recognition result is : " + s);
-        }
-
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
 
@@ -287,8 +206,8 @@ public class MyListActivity extends BaseActivity {
                 startSpeechRecognizer();
             } else if(error == SpeechRecognizer.ERROR_NO_MATCH) {
                 Log.i(TAG, "Ambiguous input, starts recognizer again.");
-                Toast.makeText(MyListActivity.this, "Sorry, Try speaking again.", Toast.LENGTH_SHORT).show();
-                startSpeechRecognizer();
+                Snackbar.make(mCoordinatorLayout, "Try Again", Snackbar.LENGTH_SHORT).show();
+                noMatchAnim(mFAB);
             }
         }
 
@@ -327,6 +246,31 @@ public class MyListActivity extends BaseActivity {
 
     }
 
+    @SuppressWarnings("deprecation")
+    @Subscribe
+    public void speechText(SpeechEvent ev) {
+        String message = ev.message;
+        if (0 < message.length()) {
+            if (mTTS.isSpeaking()) {
+                mTTS.stop();
+                Log.i("TTS", "speaking is interrupted.");
+            }
+            Log.i("TTS", "message : "+message);
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null, message);
+            } else {
+                mTTS.speak(message, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
+    }
+
+    public static class SpeechEvent {
+        public final String message;
+        public SpeechEvent(String message) {
+            this.message = message;
+        }
+    }
 
     @Subscribe
     public void ifCommandAccepted(CAEvent ev) {
@@ -357,6 +301,7 @@ public class MyListActivity extends BaseActivity {
         boundAnim(mFAB);
     }
 
+    /** Animation when FAB state changed */
     private void boundAnim(View target) {
         List<Animator> list = new ArrayList<>();
         list.add(createScaleAnim(40, target, 1.0f, 0.7f));
@@ -367,6 +312,7 @@ public class MyListActivity extends BaseActivity {
         animatorSet.start();
     }
 
+    /** Animation when failed to recognize voice input */
     private void noMatchAnim(final ImageView target) {
         List<Animator> list = new ArrayList<>();
         list.add(createScaleAnim(50, target, 1.0f, 0.7f));

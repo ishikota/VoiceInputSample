@@ -112,8 +112,8 @@ public class MyListFragment extends Fragment{
         mRecyclerView.setLayoutManager(layoutManager);
 
         mItemList = new ArrayList<>();
-        for(int i=0;i<20;i++) {
-            mItemList.add(new Item(TEXTS[i]));
+        for (String test : TEXTS) {
+            mItemList.add(new Item(test));
         }
         mCurrentPos = 0;
         mItemList.get(mCurrentPos).selected = true;
@@ -165,6 +165,31 @@ public class MyListFragment extends Fragment{
         }
     }
 
+    public static class VoiceEvent {
+        String query;
+        public VoiceEvent(String query) {
+            this.query = query;
+        }
+    }
+
+    @Subscribe
+    public void onItemClicked(ClickEvent ev) {
+        unselectView(mCurrentPos);
+        mCurrentPos = ev.position;
+        selectView(mCurrentPos);
+        Toast.makeText(getActivity(),
+                String.format("Item at %d is clidked !!", ev.position),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    public static class ClickEvent {
+        public final int position;
+        public ClickEvent(int position) {
+            this.position = position;
+        }
+    }
+
+
     private void selectView(int position) {
         if(position < 0 || mItemList.size() <= position) {
             Log.i("selectView", "OutOfBounds:"+position);
@@ -192,7 +217,7 @@ public class MyListFragment extends Fragment{
             public void run() {
                 selectView(position);
             }
-        }, 500);
+        }, 500);  // wait scroll
     }
 
     private void unselectView(int position) {
@@ -212,8 +237,9 @@ public class MyListFragment extends Fragment{
      * Because RecyclerView.getChildAt(20) causes nullpo.
      * The reason is it tries to access view which is not displayed.
      *
-     * So this method scrolls RecyclerView until target view is displayed
-     * and returns reference of target view.
+     * This method helps you to get View from adapter position.
+     * But if target View is not displayed, it's impossible .
+     * So you need to scroll and display target view before calling this method.
      *
      * @param adapter_pos index of target item in ArrayList
      * @return target view
@@ -223,7 +249,7 @@ public class MyListFragment extends Fragment{
         if(list_pos >= 0) {
             return mRecyclerView.getChildAt(list_pos);
         } else {
-            Log.i("getChildAtPosition", "Not displayed so scroll");
+            Log.e("getChildAtPosition", "Target View is Not displayed ");
             return null;
         }
     }
@@ -241,30 +267,6 @@ public class MyListFragment extends Fragment{
         }
         Log.i("getChildDisplayPosition", String.format("target item %d is not displayed", adapter_pos));
         return -1;
-    }
-
-    @Subscribe
-    public void onItemClicked(ClickEvent ev) {
-        unselectView(mCurrentPos);
-        mCurrentPos = ev.position;
-        selectView(mCurrentPos);
-        Toast.makeText(getActivity(),
-                String.format("Item at %d is clidked !!", ev.position),
-                Toast.LENGTH_SHORT).show();
-    }
-
-    public static class VoiceEvent {
-        String query;
-        public VoiceEvent(String query) {
-            this.query = query;
-        }
-    }
-
-    public static class ClickEvent {
-        public final int position;
-        public ClickEvent(int position) {
-            this.position = position;
-        }
     }
 
 }
