@@ -18,4 +18,8 @@
     <!-- this style is used in toolbar xml -->
     <style name ="LightPopupMenu" parent="android:Theme.Holo.Light"/>
 
+    <string name="ToolbarElevation">
+
+    </string>
+
 </resources>

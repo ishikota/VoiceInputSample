@@ -1,0 +1,7 @@
+<resources>
+
+    <style name="ToolbarElevation">
+        <item name="android:elevation">1dp</item>
+    </style>
+
+</resources>
