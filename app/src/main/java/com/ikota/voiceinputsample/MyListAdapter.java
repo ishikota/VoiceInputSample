@@ -1,7 +1,6 @@
 package com.ikota.voiceinputsample;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,12 +12,10 @@ import java.util.List;
 
 public class MyListAdapter extends RecyclerView.Adapter<MyListAdapter.ViewHolder> {
 
-    private Context mContext;
     private List<Item> mDataSet;
     private final LayoutInflater mInflater;
 
     public MyListAdapter(Context context, List<Item> myDataset) {
-        mContext = context;
         mDataSet = myDataset;
         mInflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -34,8 +31,8 @@ public class MyListAdapter extends RecyclerView.Adapter<MyListAdapter.ViewHolder
     public void onBindViewHolder(ViewHolder holder, final int position) {
         holder.num.setText(String.valueOf(position));
         holder.text.setText(mDataSet.get(position).content);
-        int color = mDataSet.get(position).selected ? Color.parseColor("#EEEEEE") : Color.TRANSPARENT;
-        holder.parent.setBackgroundColor(color);
+        int id = mDataSet.get(position).selected ? R.drawable.row_selected_bg : R.drawable.row_default_bg;
+        holder.parent.setBackgroundResource(id);
         holder.parent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -3,6 +3,8 @@
 
     <color name="white_dull">#FAFAFA</color>
     <color name="black">#0D0F14</color>
+    <color name="grey_200">#EEEEEE</color>
+    <color name="grey_300">#E0E0E0</color>
     <color name="cyan_500">#00BCD4</color>
     <color name="cyan_700">#0097A7</color>
     <color name="pink_A200">#FF4081</color>
@@ -15,5 +17,9 @@
     <color name="navigation_bar">@android:color/black</color>
 
     <color name="text_color_primary">@android:color/white</color>
+
+    <color name="row_default">@color/white_dull</color>
+    <color name="row_selected">@color/grey_200</color>
+    <color name="row_selected_selected">@color/grey_300</color>
 
 </resources>

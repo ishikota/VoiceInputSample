@@ -2,7 +2,6 @@ package com.ikota.voiceinputsample;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -179,9 +178,6 @@ public class MyListFragment extends Fragment{
         unselectView(mCurrentPos);
         mCurrentPos = ev.position;
         selectView(mCurrentPos);
-        Toast.makeText(getActivity(),
-                String.format("Item at %d is clidked !!", ev.position),
-                Toast.LENGTH_SHORT).show();
     }
 
     public static class ClickEvent {
@@ -202,7 +198,7 @@ public class MyListFragment extends Fragment{
         mItemList.get(mCurrentPos).selected = true;
         View target = getChildAtPosition(position);
         if(target != null) {
-            target.findViewById(R.id.parent).setBackgroundColor(Color.parseColor("#EEEEEE"));
+            target.findViewById(R.id.parent).setBackgroundResource(R.drawable.row_selected_bg);
             String message = ((TextView)target.findViewById(R.id.text)).getText().toString();
             BaseActivity.sBus.post(new MyListActivity.SpeechEvent(message));
         } else {
@@ -230,7 +226,7 @@ public class MyListFragment extends Fragment{
         mItemList.get(position).selected = false;
         View target = getChildAtPosition(position);
         if(target != null) {
-            target.findViewById(R.id.parent).setBackgroundColor(Color.TRANSPARENT);
+            target.findViewById(R.id.parent).setBackgroundResource(R.drawable.row_default_bg);
         }
     }
 
