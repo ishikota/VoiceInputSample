@@ -20,7 +20,6 @@ import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.squareup.otto.Subscribe;
 
@@ -41,10 +40,6 @@ public class MyListActivity extends BaseActivity {
 
     private SpeechRecognizer mSpeechRecognizer;
     private TextToSpeech mTTS;
-
-    private String str(int id) {
-        return getResources().getString(id);
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,9 +81,11 @@ public class MyListActivity extends BaseActivity {
             public void onClick(View view) {
                 boolean is_listening = (boolean) view.getTag();
                 if (!is_listening) {
+                    Snackbar.make(mCoordinatorLayout, "Start listening", Snackbar.LENGTH_SHORT).show();
                     speechText(new SpeechEvent(HELLO));
                     startSpeechRecognizer();
                 } else {
+                    Snackbar.make(mCoordinatorLayout, "Finished listening", Snackbar.LENGTH_SHORT).show();
                     speechText(new SpeechEvent(BYE));
                     killRecognizer();
                 }
@@ -180,7 +177,6 @@ public class MyListActivity extends BaseActivity {
         @Override
         public void onReadyForSpeech(Bundle params) {
             Log.i(TAG, "onReadyForSpeech called");
-            Toast.makeText(getApplicationContext(), str(R.string.start_listen), Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -203,6 +199,7 @@ public class MyListActivity extends BaseActivity {
             Log.i(TAG, "onError called with ： " + error);
             if(error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
                 Log.i(TAG, "TimeOut, starts recognizer again.");
+                changeFABState(false);
                 startSpeechRecognizer();
             } else if(error == SpeechRecognizer.ERROR_NO_MATCH) {
                 Log.i(TAG, "Ambiguous input, starts recognizer again.");
