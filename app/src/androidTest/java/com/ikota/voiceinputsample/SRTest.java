@@ -22,6 +22,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
@@ -177,6 +179,60 @@ public class SRTest extends ActivityInstrumentationTestCase2<MyListActivity>{
         onView(withId(R.id.fab)).perform(click());
         onView(withId(R.id.fab)).check(matches(isListening(true)));
         SystemClock.sleep(5000);
+        player = MediaPlayer.create(context, R.raw.finish);
+        player.start();
+        SystemClock.sleep(3000);
+        onView(withId(R.id.fab)).check(matches(isListening(false)));
+    }
+
+    @Test
+    public void allCommands() {
+        MyListActivity activity = activityRule.launchActivity(new Intent());
+        RecyclerView rv = (RecyclerView)activity.findViewById(android.R.id.list);
+        List<Item> items = ((MyListAdapter)rv.getAdapter()).getItems();
+        // click
+        onView(withId(android.R.id.list)).perform(RecyclerViewActions.actionOnItemAtPosition(0, click()));
+        SystemClock.sleep(4000);
+        // start voice command
+        onView(withId(R.id.fab)).perform(click());
+        SystemClock.sleep(5000);
+        // next
+        player = MediaPlayer.create(context, R.raw.next);
+        player.start();
+        SystemClock.sleep(5000);
+        assertFalse(items.get(0).selected);
+        assertTrue(items.get(1).selected);
+        // next
+        player = MediaPlayer.create(context, R.raw.next);
+        player.start();
+        SystemClock.sleep(5000);
+        assertFalse(items.get(1).selected);
+        assertTrue(items.get(2).selected);
+        // above
+        player = MediaPlayer.create(context, R.raw.above);
+        player.start();
+        SystemClock.sleep(7000);
+        assertFalse(items.get(2).selected);
+        assertTrue(items.get(1).selected);
+        // fifteen
+        player = MediaPlayer.create(context, R.raw.fifteen);
+        player.start();
+        SystemClock.sleep(7000);
+        assertFalse(items.get(1).selected);
+        assertTrue(items.get(15).selected);
+        // top
+        player = MediaPlayer.create(context, R.raw.top);
+        player.start();
+        SystemClock.sleep(5000);
+        assertFalse(items.get(15).selected);
+        assertTrue(items.get(0).selected);
+        // bottom
+        player = MediaPlayer.create(context, R.raw.bottom);
+        player.start();
+        SystemClock.sleep(7000);
+        assertFalse(items.get(0).selected);
+        assertTrue(items.get(19).selected);
+        // finish
         player = MediaPlayer.create(context, R.raw.finish);
         player.start();
         SystemClock.sleep(3000);

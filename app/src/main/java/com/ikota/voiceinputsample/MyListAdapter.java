@@ -21,6 +21,10 @@ public class MyListAdapter extends RecyclerView.Adapter<MyListAdapter.ViewHolder
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
+    public List<Item> getItems() {
+        return mDataSet;
+    }
+
     public Item getItemAt(int position) {
         return mDataSet.get(position);
     }
