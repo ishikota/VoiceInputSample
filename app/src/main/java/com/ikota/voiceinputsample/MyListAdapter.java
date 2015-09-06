@@ -21,6 +21,10 @@ public class MyListAdapter extends RecyclerView.Adapter<MyListAdapter.ViewHolder
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
+    public Item getItemAt(int position) {
+        return mDataSet.get(position);
+    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View v = mInflater.inflate(R.layout.row_my_list, viewGroup, false);
